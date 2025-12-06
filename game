@@ -1,0 +1,69 @@
+const car = document.getElementById('car');
+const road = document.getElementById('road');
+const obstacles = document.getElementById('obstacles');
+const scoreDisplay = document.getElementById('score');
+const gameOverDisplay = document.getElementById('game-over');
+
+let carPosition = 50; // Percentage from left
+let score = 0;
+let gameRunning = true;
+let obstacleSpeed = 5;
+let obstaclesArray = [];
+
+// Car movement
+document.addEventListener('keydown', (e) => {
+    if (!gameRunning) return;
+    if (e.key === 'ArrowLeft' && carPosition > 10) carPosition -= 5;
+    if (e.key === 'ArrowRight' && carPosition < 90) carPosition += 5;
+    if (e.key === 'ArrowUp') obstacleSpeed = Math.min(obstacleSpeed + 1, 10); // Boost
+    car.style.left = carPosition + '%';
+});
+
+// Generate obstacles
+function createObstacle() {
+    const obstacle = document.createElement('div');
+    obstacle.classList.add('obstacle');
+    obstacle.style.left = Math.random() * 80 + 10 + '%';
+    obstacles.appendChild(obstacle);
+    obstaclesArray.push(obstacle);
+}
+
+// Move obstacles and check collisions
+function moveObstacles() {
+    obstaclesArray.forEach((obs, index) => {
+        const obsTop = parseFloat(obs.style.top || 0) + obstacleSpeed;
+        obs.style.top = obsTop + 'px';
+        
+        // Collision detection (simple bounding box)
+        const carRect = car.getBoundingClientRect();
+        const obsRect = obs.getBoundingClientRect();
+        if (obsRect.bottom > carRect.top && obsRect.top < carRect.bottom &&
+            obsRect.right > carRect.left && obsRect.left < carRect.right) {
+            gameOver();
+        }
+        
+        // Remove off-screen obstacles
+        if (obsTop > 100) {
+            obs.remove();
+            obstaclesArray.splice(index, 1);
+            score++;
+            scoreDisplay.textContent = 'Score: ' + score;
+        }
+    });
+}
+
+// Game over
+function gameOver() {
+    gameRunning = false;
+    gameOverDisplay.style.display = 'block';
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'r' || e.key === 'R') location.reload();
+    });
+}
+
+// Game loop
+setInterval(() => {
+    if (!gameRunning) return;
+    moveObstacles();
+    if (Math.random() < 0.02) createObstacle(); // Random obstacle spawn
+}, 50);
